@@ -1,27 +1,27 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[153]:
+# In[37]:
 
 
 import tensorflow as tf
 import random
 import numpy as np
 import pandas as pd
+from sklearn.model_selection import train_test_split
 
 
-# In[154]:
+# In[38]:
 
 
 mnist = tf.keras.datasets.mnist
 
 
-# In[155]:
+# In[39]:
 
 
 #Load
 (x_train, y_train), (x_test, y_test) = mnist.load_data()
-
 
 x_train = x_train.reshape((60000, 28, 28, 1))
 x_test = x_test.reshape((10000, 28, 28, 1))
@@ -31,16 +31,26 @@ x_test = x_test.reshape((10000, 28, 28, 1))
 #Convert the samples from integers to floating-point numbers:
 x_train, x_test = x_train / 255.0, x_test / 255.0
 
+x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=10000, random_state=42)
 
-# In[156]:
+
+# In[40]:
+
+
+print(len(x_train),len(y_train))
+print(len(x_test),len(y_test))
+print(len(x_val),len(y_val))
+
+
+# In[41]:
 
 
 def def_model():
     model = tf.keras.models.Sequential([
         
-        tf.keras.layers.Conv2D(32, (3, 3), activation='relu', input_shape=(28, 28, 1)),
+        tf.keras.layers.Conv2D(64, (3, 3), activation='relu', input_shape=(28, 28, 1)),
         tf.keras.layers.MaxPooling2D(pool_size=(2, 2)),
-        tf.keras.layers.Conv2D(64, (3, 3), activation='relu'),
+        tf.keras.layers.Conv2D(128, (3, 3), activation='relu'),
         tf.keras.layers.Flatten(),
         tf.keras.layers.Dense(256, activation='relu'),
         tf.keras.layers.Dense(10, activation='softmax')
@@ -52,7 +62,7 @@ def def_model():
     return model
 
 
-# In[157]:
+# In[42]:
 
 
 def corrupt_a_fraction_of_the_labels(fraction,labels):
@@ -75,7 +85,7 @@ def corrupt_a_fraction_of_the_labels(fraction,labels):
 
 
 
-# In[ ]:
+# In[43]:
 
 
 df = pd.DataFrame(columns=['fraction','acc_test','acc_train_corrupted','acc_train_uncorrupted'])
@@ -86,10 +96,10 @@ for fraction in range(0,110,10):
     y_train_corrupt = corrupt_a_fraction_of_the_labels(fraction,y_train)
     
     model = def_model()
-    model.fit(x_train, y_train_corrupt, epochs=200,verbose=1)
+    model.fit(x_train, y_train_corrupt, epochs=100,verbose=1)
     
     
-    _, acc_test = model.evaluate(x_test, y_test)
+    _, acc_test = model.evaluate(x_test, y_test,validation_data=(x_val, y_val))
     _, acc_train_corrupted = model.evaluate(x_train, y_train_corrupt)
     _, acc_train_uncorrupted = model.evaluate(x_train, y_train)
     
@@ -104,7 +114,7 @@ for fraction in range(0,110,10):
 # In[ ]:
 
 
-df.to_csv("2_Trained_model_after_many_iterations.csv")
+df.to_csv("trained_model_with_early_stopping.csv")
 
 
 # In[ ]:
